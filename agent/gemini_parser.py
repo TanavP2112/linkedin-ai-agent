@@ -5,30 +5,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from google import genai
+import os
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
+client = genai.Client(api_key="GEMINI_API_KEY")
+
 def parse_gemini_response(resume):
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     prompt = f"""
-    You are an AI assistant extracting structured information from this resume text:
+    You are an AI assistant helping job seekers understand and summarize their resume. Here's the resume content:
 
     \"\"\"
     {resume}
     \"\"\"
 
-    Return ONLY a JSON with keys:
-    - full_name
-    - email
-    - phone
-    - education (list of degree, institution, year)
-    - work_experience (list of role, company, years)
-    - skills (comma separated)
-    - desired_roles (list)
-    - summary (1 sentence)
-
-    JSON ONLY, no explanations.
+    Please write a professional summary of this resume in 3–4 natural language sentences. Highlight strengths, work experience, and suitable job roles.
     """
-    response = client.generate_text(
-        model="gemini-2.0-flash",
-        prompt=prompt,
-        response_format=genai.ResponseFormat.TEXT
-    )
-    return json.loads(response.text.strip())
+    response = client.models.generate_content(model="gemini-2.0-flash", contents=[prompt])
+    return response.text.strip()

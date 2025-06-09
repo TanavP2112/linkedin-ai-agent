@@ -1,41 +1,70 @@
 import streamlit as st
-import os
-from dotenv import load_dotenv
+import requests
+from pypdf import PdfReader
 
-from agent.resume_parser import parse_resume
-from agent.gemini_parser import parse_gemini_response
-from agent.job_scraper import linkedin_search
-from chatbot import chat
+st.title("LinkedIn Job Finder")
 
-load_dotenv()
-
-st.set_page_config(page_title="LinkedIn Job Search Agent")
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "resume_text" not in st.session_state:
-    st.session_state.resume_text = ""
-
-if "resume_info" not in st.session_state:
-    st.session_state.resume_info = {}
-
-st.title("LinkedIn Job Search Agent")
-
-uploaded_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
+uploaded_file = st.file_uploader("Upload your resume (PDF or TXT)", type=["pdf", "txt"])
 
 if uploaded_file is not None:
-    with open("tmp_resume.pdf", "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    st.success("Resume uploaded successfully!")
-    resume_text = parse_resume("temp_resume.pdf")
-    resume_info = parse_gemini_response(resume_text)
-    st.session_state.resume_text = resume_text
-    st.session_state.resume_info = resume_info
-    st.write("Resume Text:")
-    st.write(resume_text)
-    st.write("Extracted Resume Information:")
-    st.write(resume_info)
+    if uploaded_file.type == "application/pdf":
+        reader = PdfReader(uploaded_file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+    else:
+        text = uploaded_file.getvalue().decode("utf-8")
 
-st.text("Hello! How may I help you on your job search today?")
-user_input = st.text_input("You:", key="user_input")
+    st.session_state.resume_text = text
+
+    st.text_area("Extracted Resume Text (note: this is how the AI will read your resume)", text, height=300)
+
+    if st.button("Find Jobs"):
+        with st.spinner("Parsing resume and finding jobs..."):
+            response = requests.post("http://localhost:8000/parse_resume", json={"resume": text})
+            if response.status_code == 200:
+                data = response.json()
+                st.subheader("Resume Summary:")
+                st.write(data["summary"])
+
+                st.subheader("Matched LinkedIn Jobs:")
+                for job in data["jobs"]:
+                    st.markdown(f"**{job['title']}** at *{job['company']}* — {job['location']}")
+                    st.markdown(f"[View Job]({job['url']})")
+            else:
+                st.error(f"Error: {response.text}")
+
+st.markdown("---")
+st.header("LinkedIn Chatbot (LinkedBot)")
+
+if "conversation" not in st.session_state:
+    st.session_state.conversation = []
+if (
+    "resume_text" in st.session_state
+    and not any("Resume Content:" in msg["content"] for msg in st.session_state.conversation)
+):
+    st.session_state.conversation.insert(0, {
+        "role": "user",
+        "content": f"Resume Content:\n{st.session_state.resume_text}"
+    })
+
+user_input = st.text_input("How may I help you today?")
+
+if user_input:
+    st.session_state.conversation.append({"role": "user", "content": user_input})
+
+    with st.spinner("Please Wait..."):
+        response = requests.post("http://localhost:8000/chat", json={"conversation": st.session_state.conversation})
+        # st.write("Response received from LinkedBot") <- debugging purposes only
+        if response.status_code == 200:
+            reply = response.json().get("reply", "")
+            st.session_state.conversation.append({"role": "assistant", "content": reply})
+        else:
+            st.error(f"Error: {response.text}")
+for msg in st.session_state.conversation:
+    if msg["role"] == "user" and msg["content"].startswith("Resume Content:"):
+        continue
+    if msg["role"] == "user":
+        st.markdown(f"**You:** {msg['content']}")
+    else:
+        st.markdown(f"**LinkedBot:** {msg['content']}")
