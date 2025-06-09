@@ -1,0 +1,7 @@
+streamlit
+PyPDF3
+google-genai
+beautifulsoup4
+requests
+python-dotenv
+
