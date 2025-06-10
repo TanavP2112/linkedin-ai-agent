@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 from pypdf import PdfReader
 
-# 🔁 Replace this with your actual deployed backend URL
 BACKEND_URL = "https://linkedin-job-finder-wi5m.onrender.com"
 
 st.title("LinkedIn Job Finder")
@@ -62,6 +61,7 @@ if user_input:
             response = requests.post(f"{BACKEND_URL}/chat", json={"conversation": st.session_state.conversation})
             response.raise_for_status()
             reply = response.json().get("reply", "")
+            # st.write(f"Debug: Received reply: {reply}") <- debugging purposes ONLY
             st.session_state.conversation.append({"role": "assistant", "content": reply})
         except requests.exceptions.RequestException as e:
             st.error(f"Connection error: {e}")

@@ -52,7 +52,6 @@ async def parse_resume(req: ResumeRequest):
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    # Convert to Gemini message format
     contents = []
     for msg in req.conversation:
         contents.append(f"{msg['role'].capitalize()}: {msg['content']}")
