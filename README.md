@@ -18,6 +18,8 @@ and old agent folder is still available for reference, as it was my initial star
 
 This robust stack is ideal for protoyping AI agents and getting an MVP up and running as fast as possible. For larger scaled applications, I would consider using a framework such as Next.js + React, along with PostgreSQL for the database and Redis for caching. In terms of routing, Tanstack Router is a great choice for Next.js applications. No complex algorithms were necessary for this mini-project, as most of the heavy lifting is done by the Gemini API and the streamlit functions.
 
+Gemini's API is great for its versatility and ability to adapt over time. It has a constantly updating doc's page maintained by google, and perfectly integrates with the Google ecosystem. This means that if I want to ever use OAuth, Gemini will fit in perfectly. Gemini is also really good at reading strctured blocks of texts, making it fit for reading resumes - which are tailored in a plain, specific manner.
+
 Note: The deployment is currently bugged, feel free to run the code locally using the instructions below.
 
 ## Running Locally
