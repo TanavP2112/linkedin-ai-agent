@@ -21,7 +21,7 @@ if uploaded_file is not None:
 
     if st.button("Find Jobs"):
         with st.spinner("Parsing resume and finding jobs..."):
-            response = requests.post("http://localhost:8000/parse_resume", json={"resume": text})
+            response = requests.post("http://0.0.0.0:8000/parse_resume", json={"resume": text})
             if response.status_code == 200:
                 data = response.json()
                 st.subheader("Resume Summary:")
@@ -54,7 +54,7 @@ if user_input:
     st.session_state.conversation.append({"role": "user", "content": user_input})
 
     with st.spinner("Please Wait..."):
-        response = requests.post("http://localhost:8000/chat", json={"conversation": st.session_state.conversation})
+        response = requests.post("http://0.0.0.0:8000/chat", json={"conversation": st.session_state.conversation})
         # st.write("Response received from LinkedBot") <- debugging purposes only
         if response.status_code == 200:
             reply = response.json().get("reply", "")
