@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 from pypdf import PdfReader
 
+# 🔁 Replace this with your actual deployed backend URL
+BACKEND_URL = "https://linkedin-job-finder-wi5m.onrender.com"
+
 st.title("LinkedIn Job Finder")
 
 uploaded_file = st.file_uploader("Upload your resume (PDF or TXT)", type=["pdf", "txt"])
@@ -21,8 +24,9 @@ if uploaded_file is not None:
 
     if st.button("Find Jobs"):
         with st.spinner("Parsing resume and finding jobs..."):
-            response = requests.post("http://0.0.0.0:8000/parse_resume", json={"resume": text})
-            if response.status_code == 200:
+            try:
+                response = requests.post(f"{BACKEND_URL}/parse_resume", json={"resume": text})
+                response.raise_for_status()
                 data = response.json()
                 st.subheader("Resume Summary:")
                 st.write(data["summary"])
@@ -31,8 +35,8 @@ if uploaded_file is not None:
                 for job in data["jobs"]:
                     st.markdown(f"**{job['title']}** at *{job['company']}* — {job['location']}")
                     st.markdown(f"[View Job]({job['url']})")
-            else:
-                st.error(f"Error: {response.text}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Connection error: {e}")
 
 st.markdown("---")
 st.header("LinkedIn Chatbot (LinkedBot)")
@@ -54,13 +58,14 @@ if user_input:
     st.session_state.conversation.append({"role": "user", "content": user_input})
 
     with st.spinner("Please Wait..."):
-        response = requests.post("http://0.0.0.0:8000/chat", json={"conversation": st.session_state.conversation})
-        # st.write("Response received from LinkedBot") <- debugging purposes only
-        if response.status_code == 200:
+        try:
+            response = requests.post(f"{BACKEND_URL}/chat", json={"conversation": st.session_state.conversation})
+            response.raise_for_status()
             reply = response.json().get("reply", "")
             st.session_state.conversation.append({"role": "assistant", "content": reply})
-        else:
-            st.error(f"Error: {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Connection error: {e}")
+
 for msg in st.session_state.conversation:
     if msg["role"] == "user" and msg["content"].startswith("Resume Content:"):
         continue
